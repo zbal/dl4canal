@@ -52,7 +52,7 @@ dumpvids() {
 }
 
 # Process all emissions defined in configuration file
-source $(basename $0).conf
+source dl4canal.conf
 for emission in "${EMISSION[@]}"
 do
   dumpvids $emission
