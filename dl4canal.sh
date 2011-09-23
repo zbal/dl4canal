@@ -32,21 +32,28 @@ dumpvids() {
   
   wget $emission_url -O $(basename $emission_url)
   
-  # Get latest video ID to gather XML file
-  latest_video_id=$(grep switchVideoPlayer $(basename $emission_url) | head -1  | cut -f2 -d'(' | cut -f1 -d')')
-  
-  source_wget="http://service.canal-plus.com/video/rest/getVideosLiees/cplus/$latest_video_id"
-  output_wget=$(basename $source_wget)
-  wget $source_wget -O $output_wget
-  
-  # get videos from file - ugly XML parsing...
-  videos_hd=$(sed -e 's/</\n</g' $output_wget | grep HAUT_DEBIT | sed -e 's/rtmp/\nrtmp/g' | grep rtmp)
-  
-  for video_hd in $videos_hd
+  # Get video ID to gather XML file
+  videos_id=$(grep switchVideoPlayer $(basename $emission_url) | cut -f2 -d'(' | cut -f1 -d')' | sort | uniq)
+
+  for video_id in $videos_id
   do
-    video_name=$(basename $video_hd)
-    if [ ! -f "$video_name" ]; then
-      $RTMPDUMP_BIN -r $video_hd -o $video_name
+    source_wget="http://service.canal-plus.com/video/rest/getVideosLiees/cplus/$video_id"
+    output_wget=$(basename $source_wget)
+
+    # abort if videoslies have been retrieved already
+    if [ ! -f "$output_wget" ]; then
+      wget $source_wget -O $output_wget
+  
+      # get videos from file - ugly XML parsing...
+      videos_hd=$(sed -e 's/</\n</g' $output_wget | grep HAUT_DEBIT | sed -e 's/rtmp/\nrtmp/g' | grep rtmp)
+      
+      for video_hd in $videos_hd
+      do
+        video_name=$(basename $video_hd)
+        if [ ! -f "$video_name" ]; then
+          $RTMPDUMP_BIN -r $video_hd -o $video_name
+        fi
+      done
     fi
   done
 }
