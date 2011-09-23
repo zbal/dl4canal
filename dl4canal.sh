@@ -31,10 +31,16 @@ dumpvids() {
   cd "$emission_folder"
   
   wget $emission_url -O $(basename $emission_url)
-  
+
   # Get video ID to gather XML file
   videos_id=$(grep switchVideoPlayer $(basename $emission_url) | cut -f2 -d'(' | cut -f1 -d')' | sort | uniq)
 
+  # get next pages and associated videos
+  next_videos_page=$(grep $(basename $emission_url) $(basename $emission_url) | grep next | sed -e 's/</\n</g' | grep href | cut -f2 -d'"' | cut -f1 -d'"')
+  wget http://canalplus.fr$next_videos_page -O $(basename $emission_url)_p2
+  next_videos_id=$(grep switchVideoPlayer $(basename $emission_url)_p2 | cut -f2 -d'(' | cut -f1 -d')' | sort | uniq)
+  videos_id=$(echo $videos_id $next_videos_id | sort | uniq)
+  
   for video_id in $videos_id
   do
     source_wget="http://service.canal-plus.com/video/rest/getVideosLiees/cplus/$video_id"
